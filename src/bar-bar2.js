@@ -1,86 +1,119 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from '../node_modules/lit/index.js';
 
-const logo = new URL('../assets/open-wc-logo.svg', import.meta.url).href;
 
 class BarBar2 extends LitElement {
-  static properties = {
-    header: { type: String },
+  static get properties() {
+    return {
+      duration: { type: Number, reflect: true},
+      intervalDuration: { type: Number, reflect: true },
+      progressPercentage: { type: Number, reflect: true },
+      progress: { type: Number,  reflect: true},
+      time: { type: Number, reflect: true },
+      name: { type: String, reflect: true },
+      hasStarted: { type: Boolean },
+    };
   }
 
-  static styles = css`
+  static get styles() {
+    return css`
     :host {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      font-size: calc(10px + 2vmin);
-      color: #1a2b42;
-      max-width: 960px;
+      display: block;
+      margin-bottom: 20px;
+    }
+    .progress-bar {
+      background-color: #ddd;
+      border-radius: 5px;
+      height: 30px;
+      width: 75%;
       margin: 0 auto;
+    }
+    .progress-bar-inner {
+      background-image: linear-gradient(red, yellow);
+      border-radius: 5px;
+      height: 100%;
+      width: 0;
+      transition: width linear;
+    }
+    .timer {
+      margin-top: 5px;
       text-align: center;
-      background-color: var(--bar-bar2-background-color);
     }
-
-    main {
-      flex-grow: 1;
+    .name {
+     top: -10%;
     }
-
-    .logo {
-      margin-top: 36px;
-      animation: app-logo-spin infinite 20s linear;
-    }
-
-    @keyframes app-logo-spin {
-      from {
-        transform: rotate(0deg);
+    @media (max-width: 767px) {
+        .progress-bar {
+          width: 100%;
+        }
       }
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .app-footer {
-      font-size: calc(12px + 0.5vmin);
-      align-items: center;
-    }
-
-    .app-footer a {
-      margin-left: 5px;
-    }
-  `;
+    `;
+  }
 
   constructor() {
     super();
-    this.header = 'My app';
+    this.duration = 10;
+    this.intervalDuration = 16;
+    this.progressPercentage = 100;
+    this.progress = 0;
+    this.time = 0;
+    this.name = '';
+    this.hasStarted = false;
+  }
+
+
+
+  firstUpdated() {
+    const progressBarInner = this.shadowRoot.querySelector('.progress-bar-inner');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !this.hasStarted) {
+          this.hasStarted = true;
+
+          const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (prefersReducedMotion) {
+            setTimeout(() => {
+              progressBarInner.style.width = '50%';
+              setTimeout(() => {
+                progressBarInner.style.width = '100%';
+              }, this.duration * 1000 / 2);
+            }, 10);
+          } else {
+            progressBarInner.style.transitionDuration = `${this.duration}s`;
+            progressBarInner.style.width = `${this.progressPercentage}%`;
+          }
+          this.startAnimation();
+        }
+      });
+    });
+
+    observer.observe(this);
+  }
+  
+  
+  startAnimation() {
+    const updateTime = () => {
+      this.time = parseFloat((this.time + 0.1).toFixed(1));
+
+      if (this.time < this.duration) {
+        setTimeout(updateTime, 100);
+      } else {
+        this.time = this.duration;
+      }
+
+      this.requestUpdate();
+    };
+
+    updateTime();
   }
 
   render() {
     return html`
-      <main>
-        <div class="logo"><img alt="open-wc logo" src=${logo} /></div>
-        <h1>${this.header}</h1>
-
-        <p>Edit <code>src/BarBar2.js</code> and save to reload.</p>
-        <a
-          class="app-link"
-          href="https://open-wc.org/guides/developing-components/code-examples/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Code examples
-        </a>
-      </main>
-
-      <p class="app-footer">
-        🚽 Made with love by
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://github.com/open-wc"
-          >open-wc</a
-        >.
-      </p>
+      <div class="progress-bar" aria-label="A bar graph animation showing how long it takes for ${this.name} to be installed">
+        <div class="progress-bar-inner"></div>
+      </div>
+      <div class="name">${this.name}</div>
+      <div class="timer">${this.time}s</div>
     `;
   }
 }
