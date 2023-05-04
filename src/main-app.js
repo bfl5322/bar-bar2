@@ -21,14 +21,9 @@ class MainApp extends LitElement {
     super();
     this.progressBarData = [];
     this.updateRoster();
-    window.addEventListener('scroll', () => this.handleScroll());
   }
 
-  handleScroll() {
-    this.shadowRoot.querySelectorAll('bar-bar2').forEach((bar) => {
-      bar.handleScroll();
-    });
-  }
+
 
   updateRoster() {
     const address = new URL('../assets/data.json', import.meta.url).href;
